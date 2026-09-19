@@ -10,7 +10,7 @@ from data.espn_client import (
     match_team_stats, match_lineups, match_events, match_header,
 )
 from data.sofascore_client import SofaScoreClient, normalize_profile
-from analytics import prepare_players
+from scout_analytics import prepare_players
 
 
 @st.cache_resource
