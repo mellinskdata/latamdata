@@ -5,7 +5,7 @@ import plotly.express as px
 import streamlit as st
 
 from config import LEAGUES
-from analytics import (
+from scout_analytics import (
     RADAR_METRICS, LABELS, similar_players, strengths_weaknesses,
 )
 from charts import radar_chart, heatmap_figure
