@@ -4,7 +4,7 @@ import pandas as pd
 import streamlit as st
 
 from config import LEAGUES
-from analytics import team_form, team_summary, prepare_players
+from scout_analytics import team_form, team_summary, prepare_players
 from ui.common import (
     league_matches, league_teams, league_players, match_list, normalize_name,
 )
