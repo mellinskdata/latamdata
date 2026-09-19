@@ -1,88 +1,49 @@
+# LATAMDATA v0.2
 
-# ScoutLATAM
+Plataforma Streamlit de football intelligence focada em Brasil e América do Sul.
 
-MVP de uma plataforma de scouting quantitativo para futebol sul-americano.
+## O que já funciona
 
-## Recursos
-
-- Busca e filtros por liga, posição, idade, minutos e valor de mercado
-- Performance Score
-- Custo-benefício
-- Percentis por posição
-- Radar estatístico
-- Heatmap médio
-- Pontos fortes e fracos automáticos
-- Jogadores similares por distância de cosseno
-- Comparação lado a lado
-
-## Rodando localmente
-
-```bash
-python -m venv .venv
-```
-
-Windows:
-
-```bash
-.venv\Scripts\activate
-```
-
-Linux/macOS:
-
-```bash
-source .venv/bin/activate
-```
-
-Instale:
-
-```bash
-pip install -r requirements.txt
-```
-
-Execute:
-
-```bash
-streamlit run app.py
-```
+- Busca de times
+- Página de clube com campanha e forma recente
+- Calendário e resultados
+- Pesquisa de jogos por equipe
+- Central da partida, com estatísticas, escalações e eventos quando a fonte disponibiliza
+- Brasileirão Série A
+- Brasileirão Série B
+- Liga Profesional Argentina
+- Scout de jogadores com filtros, percentis, radar, heatmap, similaridade e value score
+- Comparador de jogadores
 
 ## Dados
 
-`players.csv` e `events.csv` são **sintéticos**, gerados apenas para demonstração.
+A camada de times e partidas consulta endpoints JSON usados pelo site da ESPN e não exige chave. Como não é uma API contratada, a integração fica isolada em `data/espn_client.py` e possui timeout, retry e tratamento de falhas.
 
-Formato esperado de `players.csv`:
+A camada player-level ainda usa `players.csv` e `events.csv`, que são dados sintéticos. A interface sinaliza isso explicitamente.
 
-- player_id
-- player
-- club
-- league
-- nationality
-- age
-- position
-- foot
-- height_cm
-- matches
-- minutes
-- market_value_m
-- performance_score
-- métricas por 90
+## Rodar
 
-Formato esperado de `events.csv`:
+    pip install -r requirements.txt
+    streamlit run app.py
 
-- player_id
-- x
-- y
+## Estrutura
 
-O campo deve usar dimensões 105 x 68 no exemplo atual.
+    app.py
+    analytics.py
+    charts.py
+    config.py
+    data/
+      __init__.py
+      espn_client.py
+    players.csv
+    events.csv
+    requirements.txt
 
 ## Próximos passos
 
-- PostgreSQL
-- autenticação
-- shortlists
-- histórico por temporada
-- filtros por archetype
-- força relativa das ligas
-- valuation por machine learning
-- xG/xA próprios
-- relatórios PDF
-- importação via API
+1. Fonte real player-level.
+2. Banco histórico em DuckDB/PostgreSQL.
+3. IDs canônicos de jogadores e clubes.
+4. Shortlists persistentes.
+5. Modelo de valuation e detecção de jogadores subvalorizados.
+6. Mais ligas sul-americanas.
