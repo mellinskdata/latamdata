@@ -58,9 +58,14 @@ def match_summary(league_key: str, event_id: str):
 def league_players(league_key: str, season: int):
     league = LEAGUES[league_key]
     client = sofascore_client()
-    season_id = client.season_id(league.sofascore_tournament_id, season)
+    tournament_id = {
+        "bra_a": 325,
+        "bra_b": 390,
+        "arg_a": 155,
+    }[league_key]
+    season_id = client.season_id(tournament_id, season)
     return client.league_players(
-        league.sofascore_tournament_id,
+        tournament_id,
         season_id,
         league_key,
         league.name,
