@@ -1,0 +1,44 @@
+name: LATAMDATA CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Compile
+        run: python -m compileall -q app.py config.py charts.py scout_analytics.py data ui scripts
+      - name: Snapshot smoke test
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import pandas as pd
+          from scout_analytics import prepare_players
+
+          required = {
+              "player_id", "player", "club", "league", "position",
+              "minutes", "rating", "xg90", "xa90", "market_value_m"
+          }
+
+          for key in ("bra_a", "bra_b", "arg_a"):
+              path = Path("data/snapshots") / f"{key}_2026.csv"
+              assert path.exists(), path
+              df = pd.read_csv(path)
+              assert len(df) > 300, (key, len(df))
+              assert required.issubset(df.columns), (key, required - set(df.columns))
+              out = prepare_players(df)
+              assert out["performance_score"].notna().sum() > 100, key
+              assert out["opportunity_score"].notna().sum() > 100, key
+              print(key, len(out), round(out.performance_score.mean(), 2))
+          PY
