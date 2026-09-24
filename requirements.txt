@@ -6,3 +6,4 @@ matplotlib>=3.8
 scikit-learn>=1.5
 requests>=2.32
 urllib3>=2.2
+git+https://github.com/petmorr/FotMobDataAnalysis.git@7a22f9c29e87e66d66d3d8c4a79f376595656fd0
