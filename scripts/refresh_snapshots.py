@@ -28,6 +28,17 @@ def main() -> None:
             path = SNAPSHOT_DIR / f"{league_key}_{season}.csv"
             frame.to_csv(path, index=False)
             print(f"  wrote {len(frame)} players to {path}")
+
+            try:
+                teams = provider.league_team_stats(league_key, season)
+                if not teams.empty:
+                    team_path = SNAPSHOT_DIR / f"team_{league_key}_{season}.csv"
+                    teams.to_csv(team_path, index=False)
+                    print(f"  wrote {len(teams)} teams to {team_path}")
+                else:
+                    print("  team advanced stats returned an empty table")
+            except Exception as team_exc:
+                print(f"  team advanced stats unavailable: {team_exc}")
         except Exception as exc:
             failures.append(f"{league_key}: {exc}")
             print(f"  failed: {exc}")
