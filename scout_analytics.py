@@ -496,3 +496,92 @@ def team_summary(matches: pd.DataFrame, team_id: str) -> dict:
         "ga": ga,
         "ppg": round((wins * 3 + draws) / games, 2) if games else 0.0,
     }
+
+
+TEAM_LOWER_IS_BETTER = {
+    "goals_conceded_team_match",
+    "expected_goals_conceded_team",
+}
+
+TEAM_LABELS = {
+    "rating_team": "Nota do time",
+    "goals_team_match": "Gols / jogo",
+    "goals_conceded_team_match": "Gols sofridos / jogo",
+    "possession_percentage_team": "Posse %",
+    "clean_sheet_team": "Clean sheets",
+    "expected_goals_team": "xG",
+    "_xg_diff_team": "Saldo de xG",
+    "ontarget_scoring_att_team": "Finalizações no alvo",
+    "big_chance_team": "Grandes chances",
+    "accurate_pass_team": "Passes certos",
+    "accurate_long_balls_team": "Bolas longas certas",
+    "accurate_cross_team": "Cruzamentos certos",
+    "touches_in_opp_box_team": "Toques na área adversária",
+    "expected_goals_conceded_team": "xG sofrido",
+    "interception_team": "Interceptações",
+    "total_tackle_team": "Desarmes",
+    "effective_clearance_team": "Cortes",
+    "poss_won_att_3rd_team": "Recuperações no terço final",
+}
+
+
+def prepare_team_stats(df: pd.DataFrame) -> pd.DataFrame:
+    out = df.copy()
+    if out.empty:
+        return out
+
+    metrics = [metric for metric in TEAM_LABELS if metric in out.columns]
+    for metric in metrics:
+        series = pd.to_numeric(out[metric], errors="coerce")
+        if series.notna().sum() < 3:
+            continue
+        pct = series.rank(pct=True, method="average") * 100
+        if metric in TEAM_LOWER_IS_BETTER:
+            pct = 100 - pct + 100 / max(series.notna().sum(), 1)
+        out[f"pct_{metric}"] = pct.clip(0, 100)
+
+    dimensions = {
+        "team_attack": [
+            "expected_goals_team", "goals_team_match",
+            "ontarget_scoring_att_team", "big_chance_team",
+            "touches_in_opp_box_team",
+        ],
+        "team_control": [
+            "possession_percentage_team", "accurate_pass_team",
+            "accurate_long_balls_team",
+        ],
+        "team_pressing": [
+            "poss_won_att_3rd_team", "total_tackle_team",
+            "interception_team",
+        ],
+        "team_defense": [
+            "goals_conceded_team_match", "expected_goals_conceded_team",
+            "clean_sheet_team", "effective_clearance_team",
+        ],
+    }
+
+    for column, metric_list in dimensions.items():
+        out[column] = out.apply(
+            lambda row, ms=metric_list: _mean_percentiles(row, ms),
+            axis=1,
+        )
+
+    def style(row):
+        attack = float(row.get("team_attack", 50) or 50)
+        control = float(row.get("team_control", 50) or 50)
+        pressing = float(row.get("team_pressing", 50) or 50)
+        defense = float(row.get("team_defense", 50) or 50)
+        if control >= 72 and attack >= 62:
+            return "Dominante com bola"
+        if pressing >= 75:
+            return "Pressão agressiva"
+        if attack >= 75:
+            return "Ataque vertical"
+        if defense >= 75:
+            return "Bloco sólido"
+        if control >= 70:
+            return "Controle de posse"
+        return "Perfil equilibrado"
+
+    out["tactical_style"] = out.apply(style, axis=1)
+    return out
