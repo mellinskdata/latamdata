@@ -5,7 +5,7 @@ import streamlit as st
 from config import DEFAULT_SEASON, APP_NAME, APP_TAGLINE
 from ui.common import render_match_center
 from ui.match_pages import home_page, teams_page, games_page
-from ui.scout_pages import scout_page, compare_page
+from ui.scout_pages import scout_page, compare_page, rankings_page
 
 st.set_page_config(
     page_title=APP_NAME,
@@ -17,8 +17,9 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    .block-container {padding-top: 1.1rem; max-width: 1500px;}
+    .block-container {padding-top: 1.1rem; max-width: 1520px;}
     [data-testid="stMetricValue"] {font-size: 1.55rem;}
+    [data-testid="stDataFrame"] {border-radius: 12px;}
     </style>
     """,
     unsafe_allow_html=True,
@@ -34,6 +35,7 @@ page = st.sidebar.radio(
         "Times",
         "Jogos",
         "Scout de jogadores",
+        "Rankings & oportunidades",
         "Comparar jogadores",
         "Dados & fontes",
     ],
@@ -50,7 +52,7 @@ season = int(
 )
 
 st.sidebar.caption(
-    "Jogos e times: ESPN. Jogadores: estatísticas reais de temporada via SofaScore."
+    "Jogadores: FotMob · Jogos: ESPN · Índices: LATAMDATA"
 )
 
 if render_match_center():
@@ -64,26 +66,48 @@ elif page == "Jogos":
     games_page(season)
 elif page == "Scout de jogadores":
     scout_page(season)
+elif page == "Rankings & oportunidades":
+    rankings_page(season)
 elif page == "Comparar jogadores":
     compare_page(season)
 else:
     st.title("Dados & fontes")
     st.markdown(
         """
-        ### O que é real
+        ### Camadas de dados
 
-        **Times e jogos:** dados consumidos de endpoints JSON públicos usados pela ESPN.
+        **Jogadores e scouting:** o LATAMDATA usa dados reais de temporada obtidos
+        por uma integração web não oficial com o FotMob. A base inclui, quando
+        disponíveis, minutos, nota, gols, assistências, xG, xA, xGOT,
+        finalizações, criação, passe, drible, ações defensivas, goleiros,
+        elenco, idade, altura, nacionalidade e valor de mercado.
 
-        **Jogadores:** estatísticas reais de temporada consumidas de endpoints web públicos usados pelo SofaScore. A cobertura inclui, quando a fonte disponibiliza, gols, assistências, xG, xA, passes-chave, ações defensivas, duelos, dribles, finalizações, minutos, nota média e mapa de calor.
+        **Times e partidas:** calendário, placares e a central da partida continuam
+        usando endpoints JSON públicos utilizados pela ESPN.
 
-        ### O que o LATAMDATA calcula
+        ### Inteligência LATAMDATA
 
-        Percentis por posição, Performance Score, pontos fortes e fracos, similaridade estatística e um Value Score experimental quando existe valor de mercado disponível.
+        Os seguintes campos são calculados pela própria plataforma e não são
+        notas oficiais das fontes:
 
-        ### Limitação importante
+        - percentis por posição;
+        - **Impact Score** ponderado pela função do jogador;
+        - dimensões de Finalização, Criação, Posse e Defesa;
+        - **Reliability Score** baseado no tamanho da amostra de minutos;
+        - **Value Score** para custo-benefício quando há valor de mercado;
+        - **Opportunity Score** combinando impacto, idade, preço e amostra;
+        - arquétipo de jogo;
+        - pontos fortes e fracos;
+        - sinais de gols vs xG e assistências vs xA;
+        - similaridade entre atletas.
 
-        A integração com SofaScore é **não oficial** e não equivale a um dataset open-source/CC0 nem a uma API contratada. Se essa fonte falhar ou mudar, o app mostra indisponibilidade em vez de inventar dados.
+        ### Transparência
 
-        O antigo conjunto sintético de jogadores foi removido do fluxo e do repositório.
+        As integrações web com FotMob e ESPN não são APIs contratadas do
+        LATAMDATA e podem mudar. Elas ficam isoladas em adaptadores próprios
+        para podermos trocar de fornecedor sem reescrever a aplicação.
+
+        **Não existe fallback para jogadores fictícios.** Se uma fonte real
+        estiver indisponível, a plataforma informa a falha em vez de inventar dados.
         """
     )
