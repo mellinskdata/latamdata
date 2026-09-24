@@ -63,7 +63,36 @@ def match_summary(league_key: str, event_id: str):
 
 @st.cache_data(ttl=21600, show_spinner=False)
 def league_players(league_key: str, season: int):
-    return fotmob_provider().league_players(league_key, season)
+    snapshot = (
+        Path(__file__).resolve().parents[1]
+        / "data"
+        / "snapshots"
+        / f"{league_key}_{season}.csv"
+    )
+    try:
+        frame = fotmob_provider().league_players(league_key, season)
+        if not frame.empty:
+            try:
+                snapshot.parent.mkdir(parents=True, exist_ok=True)
+                frame.to_csv(snapshot, index=False)
+            except OSError:
+                pass
+            return frame
+    except Exception as live_error:
+        if snapshot.exists():
+            cached = pd.read_csv(snapshot)
+            if not cached.empty:
+                return cached
+        raise RuntimeError(
+            f"Falha na fonte FotMob e não existe snapshot local para "
+            f"{LEAGUES[league_key].name} {season}: {live_error}"
+        ) from live_error
+
+    if snapshot.exists():
+        cached = pd.read_csv(snapshot)
+        if not cached.empty:
+            return cached
+    return pd.DataFrame()
 
 
 @st.cache_data(ttl=21600, show_spinner=False)
