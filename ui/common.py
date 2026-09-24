@@ -69,6 +69,11 @@ def league_players(league_key: str, season: int):
         / "snapshots"
         / f"{league_key}_{season}.csv"
     )
+    if snapshot.exists():
+        cached = pd.read_csv(snapshot)
+        if not cached.empty:
+            return cached
+
     try:
         frame = fotmob_provider().league_players(league_key, season)
         if not frame.empty:
@@ -79,19 +84,11 @@ def league_players(league_key: str, season: int):
                 pass
             return frame
     except Exception as live_error:
-        if snapshot.exists():
-            cached = pd.read_csv(snapshot)
-            if not cached.empty:
-                return cached
         raise RuntimeError(
             f"Falha na fonte FotMob e não existe snapshot local para "
             f"{LEAGUES[league_key].name} {season}: {live_error}"
         ) from live_error
 
-    if snapshot.exists():
-        cached = pd.read_csv(snapshot)
-        if not cached.empty:
-            return cached
     return pd.DataFrame()
 
 
@@ -147,7 +144,7 @@ def score_text(row) -> str:
 
 def source_badges():
     st.caption(
-        "Jogadores e métricas avançadas: FotMob (integração web não oficial). "
+        "Jogadores: snapshots reais atualizados automaticamente a partir do FotMob. "
         "Jogos e central da partida: ESPN. Índices e percentis: LATAMDATA."
     )
 
