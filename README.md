@@ -1,57 +1,74 @@
 # LATAMDATA
 
-Plataforma em Streamlit para análise de futebol e scouting quantitativo com foco em Brasil e América do Sul.
+Plataforma de football intelligence e scouting quantitativo focada em Brasil e América do Sul.
 
-## Cobertura atual
+## Cobertura inicial
 
 - Brasileirão Série A
 - Brasileirão Série B
 - Liga Profesional Argentina
 
-## O que já funciona
+## Produto
 
-- pesquisa de times
-- calendário, resultados e central da partida
-- forma recente e resumo dos clubes
-- elenco estatístico real por clube
-- pesquisa e filtros de jogadores
-- gols, assistências, xG, xA e outras métricas quando disponíveis
+O LATAMDATA combina uma central de jogos com uma camada própria de análise de atletas.
+
+### Scout de jogadores
+
+- base real de atletas e temporada
+- gols, assistências, xG, xA e xGOT
+- finalizações e finalizações no alvo
+- passe e criação de chances
+- dribles
+- desarmes, interceptações, recuperações, cortes e bloqueios
+- dados de goleiros
+- idade, altura, nacionalidade e valor de mercado quando disponível
 - percentis por posição
-- radar estatístico
-- mapa de calor de temporada quando disponível
-- pontos fortes e pontos a desenvolver
-- jogadores similares por distância de cosseno
+- radar multidimensional
+- relatório estatístico detalhado
+- mapa de finalizações
+- jogadores similares
 - comparação lado a lado
-- Performance Score
-- Value Score experimental quando há valor de mercado disponível
+- exportação CSV
 
-## Fontes
+### Modelos LATAMDATA
 
-### Times e partidas
+A plataforma calcula:
 
-A camada data/espn_client.py consome endpoints JSON públicos usados pela ESPN para calendário, resultados e detalhes de partidas.
-
-### Jogadores
-
-A camada data/sofascore_client.py consome endpoints web públicos usados pelo SofaScore para estatísticas reais de temporada e heatmaps quando disponíveis.
-
-Essa integração com SofaScore é **não oficial**. Ela não deve ser tratada como uma API contratada, nem como um dataset open-source/CC0. O provider foi isolado para poder ser substituído futuramente por uma fonte licenciada sem reescrever o restante do app.
-
-O projeto **não possui mais fallback para jogadores fictícios**. Se a fonte real estiver indisponível, a interface mostra a falha em vez de gerar atletas ou números sintéticos.
-
-## Métricas derivadas pelo LATAMDATA
-
-O app calcula sobre os dados obtidos:
-
-- percentis por posição
-- Performance Score por perfil posicional
+- Impact Score
+- Reliability Score
+- Value Score
+- Opportunity Score
+- dimensões de Finalização, Criação, Posse e Defesa
+- arquétipos por função
 - pontos fortes e fracos
-- similaridade estatística
-- Value Score experimental
+- sinais de gols vs xG e assistências vs xA
 
-Essas métricas são modelos próprios do projeto e não são notas oficiais das fontes.
+Esses índices são modelos próprios e não são notas oficiais das fontes.
 
-## Rodando localmente
+### Times e jogos
+
+- pesquisa de clubes
+- calendário e resultados
+- forma recente
+- elenco estatístico
+- central da partida
+- estatísticas
+- escalações
+- eventos
+
+## Arquitetura de dados
+
+Jogadores e métricas avançadas são obtidos por uma integração web não oficial com FotMob.
+
+Jogos e match center usam endpoints JSON públicos utilizados pela ESPN.
+
+O acesso a provedores fica isolado em adaptadores para que a fonte possa ser substituída sem reescrever a camada de análise ou a interface.
+
+O projeto também possui suporte a snapshots de jogadores em data/snapshots. A aplicação tenta a fonte ao vivo e pode cair para o último snapshot real disponível. Um workflow diário prepara a atualização desses snapshots.
+
+Não existe fallback sintético para jogadores.
+
+## Rodando
 
     pip install -r requirements.txt
     streamlit run app.py
@@ -59,25 +76,28 @@ Essas métricas são modelos próprios do projeto e não são notas oficiais das
 ## Estrutura
 
     app.py
-    analytics.py
+    scout_analytics.py
     charts.py
     config.py
     data/
       espn_client.py
-      sofascore_client.py
+      fotmob_provider.py
+      snapshots/
     ui/
       common.py
       match_pages.py
       scout_pages.py
-    requirements.txt
+    scripts/
+      refresh_snapshots.py
 
-## Próximos passos
+## Próximas evoluções
 
-- enriquecer valor de mercado com uma fonte licenciada/confiável
-- persistência em PostgreSQL
-- shortlists
+- força relativa de ligas
 - histórico por temporada
-- força relativa entre ligas
-- relatório PDF
-- modelos próprios de valuation e potencial
-- mais ligas sul-americanas
+- shortlists persistentes
+- filtros por função tática
+- perfis de equipe e Tactical Fingerprint
+- relatórios PDF de scouting
+- banco PostgreSQL
+- modelos de valuation e potencial
+- expansão para outras ligas sul-americanas
