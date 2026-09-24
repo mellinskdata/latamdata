@@ -44,6 +44,42 @@ def home_page(season: int):
             "home_next_",
         )
 
+    st.divider()
+    st.subheader("Radar LATAMDATA · Brasileirão Série A")
+    try:
+        players = prepare_players(league_players("bra_a", season))
+        qualified = players[players.minutes.fillna(0) >= 600].copy()
+        left, right = st.columns(2)
+        with left:
+            st.markdown("**Maior Impact Score**")
+            cols = [
+                "player", "club", "position", "age", "minutes",
+                "performance_score", "archetype",
+            ]
+            st.dataframe(
+                qualified.sort_values(
+                    "performance_score", ascending=False
+                )[cols].head(8),
+                hide_index=True,
+                use_container_width=True,
+            )
+        with right:
+            st.markdown("**Oportunidades Sub-23**")
+            u23 = qualified[qualified.age.fillna(99) <= 23]
+            cols = [
+                "player", "club", "position", "age", "minutes",
+                "opportunity_score", "market_value_m", "archetype",
+            ]
+            st.dataframe(
+                u23.sort_values(
+                    "opportunity_score", ascending=False
+                )[cols].head(8),
+                hide_index=True,
+                use_container_width=True,
+            )
+    except Exception as exc:
+        st.caption(f"Radar de atletas temporariamente indisponível: {exc}")
+
 
 def teams_page(season: int):
     st.title("Times")
