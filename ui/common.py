@@ -94,6 +94,16 @@ def league_players(league_key: str, season: int):
 
 @st.cache_data(ttl=21600, show_spinner=False)
 def league_team_stats(league_key: str, season: int):
+    snapshot = (
+        Path(__file__).resolve().parents[1]
+        / "data"
+        / "snapshots"
+        / f"team_{league_key}_{season}.csv"
+    )
+    if snapshot.exists():
+        cached = pd.read_csv(snapshot)
+        if not cached.empty:
+            return cached
     return fotmob_provider().league_team_stats(league_key, season)
 
 
