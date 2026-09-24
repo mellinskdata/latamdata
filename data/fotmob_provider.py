@@ -23,6 +23,27 @@ LEAGUES = {
     "arg_a": {"id": 112, "name": "Liga Profesional Argentina"},
 }
 
+TEAM_STATS = [
+    "rating_team",
+    "goals_team_match",
+    "goals_conceded_team_match",
+    "possession_percentage_team",
+    "clean_sheet_team",
+    "expected_goals_team",
+    "_xg_diff_team",
+    "ontarget_scoring_att_team",
+    "big_chance_team",
+    "accurate_pass_team",
+    "accurate_long_balls_team",
+    "accurate_cross_team",
+    "touches_in_opp_box_team",
+    "expected_goals_conceded_team",
+    "interception_team",
+    "total_tackle_team",
+    "effective_clearance_team",
+    "poss_won_att_3rd_team",
+]
+
 RAW_STATS = [
     "mins_played",
     "rating",
@@ -404,12 +425,18 @@ class FotMobProvider:
             f"Disponíveis: {available or 'nenhuma'}"
         )
 
-    def deep_stat(self, league_id: int, season_id: int, stat: str) -> list[dict]:
+    def deep_stat(
+        self,
+        league_id: int,
+        season_id: int,
+        stat: str,
+        kind: str = "players",
+    ) -> list[dict]:
         payload = self._get(
             "leagueseasondeepstats",
             id=int(league_id),
             season=int(season_id),
-            type="players",
+            type=kind,
             stat=stat,
         )
         return payload.get("statsData", []) or []
@@ -528,6 +555,51 @@ class FotMobProvider:
             meta["name"],
             meta["id"],
         )
+
+    def league_team_stats(self, league_key: str, season: int) -> pd.DataFrame:
+        meta = LEAGUES[league_key]
+        season_id, season_name = self.resolve_season(meta["id"], season)
+
+        def fetch(stat: str):
+            try:
+                return stat, self.deep_stat(
+                    meta["id"], season_id, stat, kind="teams"
+                )
+            except Exception:
+                return stat, []
+
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            results = list(pool.map(fetch, TEAM_STATS))
+
+        rows: dict[int, dict] = {}
+        for stat, entries in results:
+            for entry in entries:
+                team_id = entry.get("teamId") or entry.get("id")
+                if team_id is None:
+                    continue
+                team_id = int(team_id)
+                row = rows.setdefault(
+                    team_id,
+                    {
+                        "team_id": team_id,
+                        "team": entry.get("name") or "",
+                        "league_key": league_key,
+                        "league": meta["name"],
+                        "season_id": season_id,
+                        "season": season_name,
+                    },
+                )
+                row[stat] = _stat_value(entry)
+
+        frame = pd.DataFrame(list(rows.values()))
+        if frame.empty:
+            return frame
+
+        for stat in TEAM_STATS:
+            if stat not in frame:
+                frame[stat] = np.nan
+            frame[stat] = pd.to_numeric(frame[stat], errors="coerce")
+        return frame
 
     def _resolve_player_entry(
         self,
