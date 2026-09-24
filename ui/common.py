@@ -96,6 +96,11 @@ def league_players(league_key: str, season: int):
 
 
 @st.cache_data(ttl=21600, show_spinner=False)
+def league_team_stats(league_key: str, season: int):
+    return fotmob_provider().league_team_stats(league_key, season)
+
+
+@st.cache_data(ttl=21600, show_spinner=False)
 def player_details(player_id: int, league_key: str, season_name: str | None = None):
     return fotmob_provider().player_details(
         int(player_id),
