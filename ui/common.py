@@ -1,15 +1,22 @@
 from __future__ import annotations
 
 import unicodedata
+
 import pandas as pd
 import streamlit as st
 
 from config import LEAGUES
 from data.espn_client import (
-    ESPNClient, normalize_scoreboard, normalize_teams, teams_from_matches,
-    match_team_stats, match_lineups, match_events, match_header,
+    ESPNClient,
+    normalize_scoreboard,
+    normalize_teams,
+    teams_from_matches,
+    match_team_stats,
+    match_lineups,
+    match_events,
+    match_header,
 )
-from data.sofascore_client import SofaScoreClient, normalize_profile
+from data.fotmob_provider import FotMobProvider
 from scout_analytics import prepare_players
 
 
@@ -19,8 +26,8 @@ def espn_client():
 
 
 @st.cache_resource
-def sofascore_client():
-    return SofaScoreClient()
+def fotmob_provider():
+    return FotMobProvider()
 
 
 @st.cache_data(ttl=900, show_spinner=False)
@@ -56,31 +63,15 @@ def match_summary(league_key: str, event_id: str):
 
 @st.cache_data(ttl=21600, show_spinner=False)
 def league_players(league_key: str, season: int):
-    league = LEAGUES[league_key]
-    client = sofascore_client()
-    tournament_id = {
-        "bra_a": 325,
-        "bra_b": 390,
-        "arg_a": 155,
-    }[league_key]
-    season_id = client.season_id(tournament_id, season)
-    return client.league_players(
-        tournament_id,
-        season_id,
+    return fotmob_provider().league_players(league_key, season)
+
+
+@st.cache_data(ttl=21600, show_spinner=False)
+def player_details(player_id: int, league_key: str, season_name: str | None = None):
+    return fotmob_provider().player_details(
+        int(player_id),
         league_key,
-        league.name,
-    )
-
-
-@st.cache_data(ttl=21600, show_spinner=False)
-def player_profile(player_id: int):
-    return normalize_profile(sofascore_client().player_profile(int(player_id)))
-
-
-@st.cache_data(ttl=21600, show_spinner=False)
-def player_heatmap(player_id: int, tournament_id: int, season_id: int):
-    return sofascore_client().player_season_heatmap(
-        int(player_id), int(tournament_id), int(season_id)
+        season_name=season_name,
     )
 
 
@@ -121,7 +112,10 @@ def score_text(row) -> str:
 
 
 def source_badges():
-    st.caption("Dados reais de jogadores: SofaScore (integração web não oficial). Times e jogos: ESPN.")
+    st.caption(
+        "Jogadores e métricas avançadas: FotMob (integração web não oficial). "
+        "Jogos e central da partida: ESPN. Índices e percentis: LATAMDATA."
+    )
 
 
 def match_list(df, prefix: str = ""):
