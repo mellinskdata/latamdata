@@ -2,11 +2,13 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from pathlib import Path
-
-from data.fotmob_provider import FotMobProvider, LEAGUES
-
+import sys
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from data.fotmob_provider import FotMobProvider, LEAGUES
 SNAPSHOT_DIR = ROOT / "data" / "snapshots"
 
 
