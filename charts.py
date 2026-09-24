@@ -142,3 +142,42 @@ def heatmap_figure(events):
                 aspect="auto",
             )
     return fig
+
+
+
+def team_fingerprint_chart(row):
+    mapping = [
+        ("Ataque", "team_attack"),
+        ("Controle", "team_control"),
+        ("Pressão", "team_pressing"),
+        ("Defesa", "team_defense"),
+    ]
+    labels = []
+    values = []
+    for label, key in mapping:
+        value = row.get(key)
+        if pd.notna(value):
+            labels.append(label)
+            values.append(float(value))
+
+    if len(values) < 3:
+        fig = go.Figure()
+        fig.add_annotation(text="Dados insuficientes para o fingerprint", showarrow=False)
+        fig.update_layout(height=390)
+        return fig
+
+    fig = go.Figure(
+        go.Scatterpolar(
+            r=values + [values[0]],
+            theta=labels + [labels[0]],
+            fill="toself",
+            hovertemplate="%{theta}: %{r:.0f}/100<extra></extra>",
+        )
+    )
+    fig.update_layout(
+        polar=dict(radialaxis=dict(visible=True, range=[0, 100])),
+        showlegend=False,
+        height=390,
+        margin=dict(l=40, r=40, t=25, b=25),
+    )
+    return fig
