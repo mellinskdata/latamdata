@@ -4,10 +4,12 @@ import pandas as pd
 import streamlit as st
 
 from config import LEAGUES
-from scout_analytics import team_form, team_summary, prepare_players
+from scout_analytics import team_form, team_summary, prepare_players, prepare_team_stats, TEAM_LABELS
 from ui.common import (
-    league_matches, league_teams, league_players, match_list, normalize_name,
+    league_matches, league_teams, league_players, league_team_stats,
+    match_list, normalize_name,
 )
+from charts import team_fingerprint_chart
 
 
 def home_page(season: int):
@@ -89,7 +91,9 @@ def teams_page(season: int):
         if not form.empty:
             st.write("Forma recente: " + " ".join(form.result.astype(str)))
 
-        tab_games, tab_players = st.tabs(["Partidas", "Jogadores"])
+        tab_games, tab_players, tab_fingerprint = st.tabs(
+            ["Partidas", "Jogadores", "Tactical Fingerprint"]
+        )
         with tab_games:
             club_matches = matches[
                 (matches.home_id.astype(str) == str(team_id))
@@ -125,6 +129,68 @@ def teams_page(season: int):
                     hide_index=True,
                     use_container_width=True,
                 )
+
+        with tab_fingerprint:
+            try:
+                advanced = prepare_team_stats(league_team_stats(key, season))
+                club_norm = normalize_name(team.team)
+                names = advanced.team.fillna("").map(normalize_name)
+                matched = advanced[
+                    names.map(
+                        lambda value: value == club_norm
+                        or (value and value in club_norm)
+                        or (club_norm and club_norm in value)
+                    )
+                ]
+                if matched.empty:
+                    st.info("Fingerprint avançado indisponível para este clube.")
+                else:
+                    profile = matched.iloc[0]
+                    st.subheader("Tactical Fingerprint")
+                    st.caption(
+                        f"Estilo detectado: **{profile.tactical_style}** · "
+                        "percentis comparados aos times da mesma liga."
+                    )
+                    left, right = st.columns([1, 1.25])
+                    with left:
+                        st.plotly_chart(
+                            team_fingerprint_chart(profile),
+                            use_container_width=True,
+                        )
+                    with right:
+                        metrics = [
+                            "expected_goals_team",
+                            "expected_goals_conceded_team",
+                            "_xg_diff_team",
+                            "possession_percentage_team",
+                            "ontarget_scoring_att_team",
+                            "big_chance_team",
+                            "touches_in_opp_box_team",
+                            "accurate_pass_team",
+                            "poss_won_att_3rd_team",
+                            "total_tackle_team",
+                            "interception_team",
+                        ]
+                        rows = []
+                        for metric in metrics:
+                            value = profile.get(metric)
+                            pct = profile.get(f"pct_{metric}")
+                            if pd.notna(value):
+                                rows.append(
+                                    {
+                                        "Métrica": TEAM_LABELS.get(metric, metric),
+                                        "Valor": round(float(value), 2),
+                                        "Percentil": None if pd.isna(pct)
+                                        else round(float(pct), 0),
+                                    }
+                                )
+                        st.dataframe(
+                            pd.DataFrame(rows),
+                            hide_index=True,
+                            use_container_width=True,
+                        )
+            except Exception as exc:
+                st.info(f"Fingerprint avançado indisponível: {exc}")
     except Exception as exc:
         st.error(str(exc))
 
