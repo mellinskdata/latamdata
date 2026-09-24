@@ -18,8 +18,23 @@ st.markdown(
     """
     <style>
     .block-container {padding-top: 1.1rem; max-width: 1520px;}
+    [data-testid="stMetric"] {
+        border: 1px solid rgba(128,128,128,.20);
+        border-radius: 14px;
+        padding: .65rem .8rem;
+        background: rgba(128,128,128,.055);
+    }
     [data-testid="stMetricValue"] {font-size: 1.55rem;}
-    [data-testid="stDataFrame"] {border-radius: 12px;}
+    [data-testid="stDataFrame"] {
+        border: 1px solid rgba(128,128,128,.15);
+        border-radius: 12px;
+    }
+    .stTabs [data-baseweb="tab-list"] {gap: .35rem;}
+    .stTabs [data-baseweb="tab"] {
+        border-radius: 9px 9px 0 0;
+        padding-left: .9rem;
+        padding-right: .9rem;
+    }
     </style>
     """,
     unsafe_allow_html=True,
