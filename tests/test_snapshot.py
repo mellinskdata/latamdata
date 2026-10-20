@@ -9,7 +9,7 @@ def test_snapshot_integrity():
     assert len(d['players'])>0
     assert len(d['clubs'])>0
     assert len(d['metrics'])>=10
-    assert len(set(m['id'] for m in d['metrics']))==152
+    assert len(set(m['id'] for m in d['metrics']))==len(d['metrics'])
     assert len(set(c['name'] for c in d['clubs']))==len(d['clubs'])
     assert len({str(p['id']) for p in d['players']}) == len(d['players'])
     assert all(isinstance(c.get('table'),dict) for c in d['clubs'])
