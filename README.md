@@ -1,103 +1,67 @@
-# LATAMDATA
+# LATAMDATA — Web Dashboard v0.2
 
-Plataforma de football intelligence e scouting quantitativo focada em Brasil e América do Sul.
+Nova interface **React + Vite** e um serviço opcional **FastAPI**, preparados para serem integrados ao repositório já existente `mellinskdata/latamdata`, sem substituir o Streamlit.
 
-## Cobertura inicial
+## Implementado
 
-- Brasileirão Série A
-- Brasileirão Série B
-- Liga Profesional Argentina
+- Visão geral: indicadores, artilheiros, assistências, xG e classificação
+- Ranking de atletas e clubes com seletor de métricas catalogadas da captura (152 no total; 103 preenchidas para jogadores); busca, filtros, mínimo de minutos, por 90 min, ordenação e CSV
+- Comparação de até quatro jogadores, radar de percentis por posição e tabela detalhada
+- Laboratório: dispersão interativa com eixos configuráveis e ranking em barras
+- Perfil de atleta: radar, percentis, estatísticas agrupadas e relatório para impressão/PDF
+- Clubes: classificação, resumo de temporada, elenco e estatísticas coletivas
+- Partidas: frontend conectado ao adaptador ESPN já presente no repositório original (requer backend integrado e acesso online)
+- Identidade LATAMDATA exclusiva, dark mode responsivo para desktop e mobile
 
-## Produto
+## Como rodar o frontend
 
-O LATAMDATA combina uma central de jogos com uma camada própria de análise de atletas.
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-### Scout de jogadores
+Acesse http://localhost:5173. No repositório público, a etapa `predev` transforma automaticamente os snapshots CSV já existentes em JSON compatível caso o arquivo de desenvolvimento não esteja presente.
 
-- base real de atletas e temporada
-- gols, assistências, xG, xA e xGOT
-- finalizações e finalizações no alvo
-- passe e criação de chances
-- dribles
-- desarmes, interceptações, recuperações, cortes e bloqueios
-- dados de goleiros
-- idade, altura, nacionalidade e valor de mercado quando disponível
-- percentis por posição
-- radar multidimensional
-- relatório estatístico detalhado
-- mapa de finalizações
-- jogadores similares
-- comparação lado a lado
-- exportação CSV
+Para produção estática: `npm run build`. Publique a pasta `frontend/dist` no Cloudflare Pages, com raiz de projeto `frontend`, comando `npm run build` e diretório de saída `dist`.
 
-### Modelos LATAMDATA
+## Como habilitar o backend (jogos)
 
-A plataforma calcula:
+O backend também funciona de forma independente. Você pode colocá-lo na raiz do repositório Streamlit sem sobrescrever nenhum arquivo existente:
 
-- Impact Score
-- Reliability Score
-- Value Score
-- Opportunity Score
-- dimensões de Finalização, Criação, Posse e Defesa
-- arquétipos por função
-- pontos fortes e fracos
-- sinais de gols vs xG e assistências vs xA
+```bash
+pip install -r backend/requirements.txt
+uvicorn backend.main:app --reload --port 8000
+```
 
-Esses índices são modelos próprios e não são notas oficiais das fontes.
+O Vite encaminha `/api` para a porta 8000. A API usa um adaptador próprio para consultar os placares ESPN; os dados dependem da disponibilidade do provedor. Em produção, configure o proxy `/api` para o backend publicado. Sem backend, a seção Partidas explica claramente a indisponibilidade e não inventa resultados.
 
-### Times e jogos
+## Dados e advertências de publicação
 
-- pesquisa de clubes
-- calendário e resultados
-- forma recente
-- elenco estatístico
-- central da partida
-- estatísticas
-- escalações
-- eventos
+`frontend/public/data/serie-a-2026.json` contém uma **cópia de desenvolvimento** dos dados do Brasileirão presentes no arquivo HAR fornecido pelo usuário, identificada com a data 20/10/2026. São 676 atletas únicos (678 registros, 2 duplicados), 20 equipes e um catálogo de 152 métricas. Os registros são uma captura histórica, **não** atualização em tempo real. Os dados não foram gerados artificialmente.
 
-## Arquitetura de dados
+**Antes de publicar o dataset em site aberto:** confirme os direitos de redistribuição/licença da fonte original. Para lançamento comercial, substituir por dados licenciados ou pelos snapshots já disponíveis no GitHub do projeto. A interface e os cálculos desta versão são implementação independente, sem reaproveitamento do HTML/CSS do site analisado.
 
-Jogadores e métricas avançadas são obtidos por uma integração web não oficial com FotMob.
+## Integração segura ao GitHub
 
-Jogos e match center usam endpoints JSON públicos utilizados pela ESPN.
+Recomendação: criar branch `feature/react-dashboard`, adicionar `frontend/` e `backend/`, revisar a licença da base fornecida, testar CI e abrir PR. Não substitua `app.py` ou `data/` do Streamlit. Acesse a plataforma anterior enquanto a transição acontece.
 
-O acesso a provedores fica isolado em adaptadores para que a fonte possa ser substituída sem reescrever a camada de análise ou a interface.
+## Limites desta entrega
 
-O projeto também possui suporte a snapshots de jogadores em data/snapshots. A aplicação tenta a fonte ao vivo e pode cair para o último snapshot real disponível. Um workflow diário prepara a atualização desses snapshots.
+Não foi possível executar `npm install` neste ambiente (sem acesso externo). A validação da interface é estática, e testes de interação/browser devem ser feitos no primeiro deploy. Não inclui autenticação, banco de dados próprio, atualizações em tempo real ou mapas de finalizações e passes por evento (esses dados não constam na captura do HAR). O endpoint de jogos requer rede e as bibliotecas instaladas.
 
-Não existe fallback sintético para jogadores.
+### Execução no Windows
 
-## Rodando
+Você também pode executar `iniciar-windows.bat` (frontend) e, em outra janela, `iniciar-api-windows.bat` (serviço de partidas). É necessário instalar Node.js e Python.
 
-    pip install -r requirements.txt
-    streamlit run app.py
+### Atualizar uma captura autorizada
 
-## Estrutura
+```bash
+python scripts/import_har.py caminho/captura.har --output frontend/public/data/serie-a-2026.json
+```
 
-    app.py
-    scout_analytics.py
-    charts.py
-    config.py
-    data/
-      espn_client.py
-      fotmob_provider.py
-      snapshots/
-    ui/
-      common.py
-      match_pages.py
-      scout_pages.py
-    scripts/
-      refresh_snapshots.py
+O importador extrai somente as estatísticas do Brasileirão, não copia HTML/CSS/JS ou logotipos de terceiros.
 
-## Próximas evoluções
+### Implantação no GitHub público
 
-- força relativa de ligas
-- histórico por temporada
-- shortlists persistentes
-- filtros por função tática
-- perfis de equipe e Tactical Fingerprint
-- relatórios PDF de scouting
-- banco PostgreSQL
-- modelos de valuation e potencial
-- expansão para outras ligas sul-americanas
+No branch público **não inclua o JSON obtido a partir do HAR** sem autorização/licença para redistribuir a base. O script `scripts/build_public_snapshot.py` gera automaticamente uma versão com as métricas presentes nos CSVs já publicados no projeto. Ela é funcional, porém tem menos indicadores do que o conjunto de 152 métricas da captura (e não inclui uma tabela de classificação verificável); por isso, a UI informa a indisponibilidade da classificação até que uma fonte autorizada seja integrada.

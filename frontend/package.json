@@ -1,0 +1,20 @@
+{
+  "name": "latamdata-web",
+  "private": true,
+  "version": "0.2.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "predev": "python ../scripts/build_public_snapshot.py --if-missing",
+    "prebuild": "python ../scripts/build_public_snapshot.py --if-missing"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "vite": "^6.1.0"
+  }
+}
