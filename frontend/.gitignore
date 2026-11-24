@@ -2,3 +2,4 @@ node_modules
 dist
 .env
 /public/data/serie-a-2026.json
+coverage

@@ -1,11 +1,14 @@
-"""Build a publishable LATAMDATA snapshot from this repository's existing CSV data.
+"""Build a LATAMDATA snapshot from this repository's existing CSV data.
 
 This avoids committing third-party HAR capture data to the public GitHub branch.
-It purposefully exports only metrics supported by the repository snapshots.
+It exports only supported metrics. Existing CSVs still require redistribution rights.
 """
 import argparse
 import csv
 import json
+import hashlib
+import math
+import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -55,9 +58,37 @@ CAT_NAMES = {'geral':'Visão Geral','gols':'Gols & Finalização','chute':'Chute
 def val(row,key):
     try:
         n=float(row.get(key, ''))
-        return n if n==n else None
+        return n if math.isfinite(n) else None
     except (ValueError,TypeError):
         return None
+
+
+def provenance(snapshot_root: Path, files: list[Path]):
+    """Separate the source commit date from the time this JSON was built."""
+    paths = [str(path.relative_to(snapshot_root)) for path in files]
+    try:
+        result = subprocess.run(
+            ['git', '-C', str(snapshot_root), 'log', '-1', '--format=%H%n%cI', '--', *paths],
+            check=True, capture_output=True, text=True,
+        ).stdout.strip().splitlines()
+        dirty = subprocess.run(
+            ['git', '-C', str(snapshot_root), 'status', '--porcelain', '--', *paths],
+            check=True, capture_output=True, text=True,
+        ).stdout.strip()
+        shallow = subprocess.run(
+            ['git', '-C', str(snapshot_root), 'rev-parse', '--is-shallow-repository'],
+            check=True, capture_output=True, text=True,
+        ).stdout.strip() == 'true'
+        commit, date = result if len(result) == 2 and not dirty and not shallow else (None, None)
+    except (OSError, subprocess.CalledProcessError):
+        commit, date = None, None
+    return {
+        'updated': datetime.fromisoformat(date).strftime('%d/%m/%Y') if date else 'Data da fonte indisponível',
+        'source_updated_at': date,
+        'source_commit': commit,
+        'built_at': datetime.now(timezone.utc).isoformat(),
+        'source_files': {path: hashlib.sha256(file.read_bytes()).hexdigest() for path, file in zip(paths, files)},
+    }
 
 
 def build(snapshot_root:Path):
@@ -73,7 +104,7 @@ def build(snapshot_root:Path):
         players.append({'id':p.get('player_id') or f"{p['player']}|{p['club']}", 'name':p['player'],
             'club':p['club'], 'position':p.get('position_label') or p.get('position') or '-',
             'group':p.get('position') or '-', 'age':val(p,'age'), 'nation':p.get('nationality') or '-',
-            'minutes':val(p,'minutes') or 0, 'matches':0, 'starts':0, 's':data})
+            'minutes':val(p,'minutes') or 0, 'matches':None, 'starts':None, 's':data})
     with club_file.open(encoding='utf-8-sig',newline='') as f:
         rawclubs=list(csv.DictReader(f))
     clubs=[]
@@ -83,7 +114,7 @@ def build(snapshot_root:Path):
             's':stats,'table':{}})
     metrics=[{'id':i,'en':field,'pt':name,'cat':cat,'type':typ,'neg':False} for i,field,name,cat,typ in METRIC_FIELDS]
     metrics += [{'id':i,'en':name,'pt':name,'cat':cat,'type':typ,'neg':i==201} for i,name,cat,typ in TEAM_METRICS]
-    return {'season':2026,'updated':datetime.now(timezone.utc).strftime('%d/%m/%Y'),
+    return {'season':2026,**provenance(snapshot_root, [player_file, club_file]),
       'source':'Snapshots LATAMDATA do repositório · FotMob (integração não oficial)',
       'metrics':metrics,'cats':{c:{'pt':n} for c,n in CAT_NAMES.items()},
       'players':players,'clubs':clubs}

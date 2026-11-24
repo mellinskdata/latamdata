@@ -4,7 +4,7 @@ Run: uvicorn backend.main:app --port 8000 --reload
 from __future__ import annotations
 
 import time
-from datetime import datetime, timezone
+import math
 
 import requests
 from fastapi import FastAPI, HTTPException, Query
@@ -23,31 +23,50 @@ _cache: dict[int, tuple[float, list[dict]]] = {}
 
 def _parse_scoreboard(payload: dict) -> list[dict]:
     """Normalize ESPN public scoreboard without manufacturing missing results."""
+    if not isinstance(payload, dict) or not isinstance(payload.get('events'), list):
+        raise ValueError('Invalid scoreboard envelope')
     matches = []
-    for event in payload.get('events', []) or []:
-        comp = (event.get('competitions') or [None])[0]
-        if not comp:
+    for event in payload['events']:
+        if not isinstance(event, dict):
+            continue
+        competitions = event.get('competitions')
+        if not isinstance(competitions, list) or not competitions:
+            continue
+        comp = competitions[0]
+        if not isinstance(comp, dict):
             continue
         comps = comp.get('competitors') or []
+        if not isinstance(comps, list):
+            continue
+        comps = [c for c in comps if isinstance(c, dict)]
         home = next((c for c in comps if c.get('homeAway') == 'home'), {})
         away = next((c for c in comps if c.get('homeAway') == 'away'), {})
         if not home or not away:
             continue
         def score(c):
             try:
-                return int(float(c['score'])) if c.get('score') not in ('', None) else None
+                raw = c.get('score')
+                if raw in ('', None) or isinstance(raw, bool):
+                    return None
+                value = float(raw)
+                return int(value) if math.isfinite(value) and value >= 0 and value.is_integer() else None
             except (ValueError, TypeError):
                 return None
-        status = (event.get('status') or {}).get('type') or {}
+        state = event.get('status')
+        status = state.get('type') if isinstance(state, dict) else None
+        status = status if isinstance(status, dict) else {}
+        def team_name(competitor):
+            team = competitor.get('team')
+            return (team.get('displayName') or team.get('name')) if isinstance(team, dict) else None
         matches.append({
             'event_id': str(event.get('id', '')),
             'date': event.get('date'),
-            'home': (home.get('team') or {}).get('displayName') or (home.get('team') or {}).get('name'),
-            'away': (away.get('team') or {}).get('displayName') or (away.get('team') or {}).get('name'),
+            'home': team_name(home),
+            'away': team_name(away),
             'home_score': score(home),
             'away_score': score(away),
             'status': status.get('description') or status.get('detail') or 'Agendado',
-            'completed': bool(status.get('completed', False)),
+            'completed': status.get('completed') is True,
         })
     return matches
 
@@ -60,7 +79,7 @@ def health():
 @app.get('/api/matches')
 def matches(season: int = Query(2026, ge=2018, le=2030)):
     cache = _cache.get(season)
-    if cache and time.time() - cache[0] < 1200:
+    if cache and time.monotonic() - cache[0] < 1200:
         return {'season': season, 'matches': cache[1], 'cached': True}
     try:
         response = requests.get(
@@ -71,7 +90,7 @@ def matches(season: int = Query(2026, ge=2018, le=2030)):
         )
         response.raise_for_status()
         result = _parse_scoreboard(response.json())
-        _cache[season] = (time.time(), result)
+        _cache[season] = (time.monotonic(), result)
         return {'season': season, 'matches': result, 'cached': False}
     except requests.RequestException as exc:
         raise HTTPException(status_code=502, detail='Fonte de partidas temporariamente indisponível.') from exc

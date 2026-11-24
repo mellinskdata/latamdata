@@ -1,67 +1,77 @@
-# LATAMDATA — Web Dashboard v0.2
+# LATAMDATA v2 — React e API de partidas
 
-Nova interface **React + Vite** e um serviço opcional **FastAPI**, preparados para serem integrados ao repositório já existente `mellinskdata/latamdata`, sem substituir o Streamlit.
+Dashboard React/Vite para visão geral, ranking de jogadores e clubes, comparação,
+laboratório de gráficos e perfil estatístico. O serviço FastAPI opcional atende
+as partidas. O aplicativo Streamlit continua em `app.py`.
 
-## Implementado
+## Executar e verificar localmente
 
-- Visão geral: indicadores, artilheiros, assistências, xG e classificação
-- Ranking de atletas e clubes com seletor de métricas catalogadas da captura (152 no total; 103 preenchidas para jogadores); busca, filtros, mínimo de minutos, por 90 min, ordenação e CSV
-- Comparação de até quatro jogadores, radar de percentis por posição e tabela detalhada
-- Laboratório: dispersão interativa com eixos configuráveis e ranking em barras
-- Perfil de atleta: radar, percentis, estatísticas agrupadas e relatório para impressão/PDF
-- Clubes: classificação, resumo de temporada, elenco e estatísticas coletivas
-- Partidas: frontend conectado ao adaptador ESPN já presente no repositório original (requer backend integrado e acesso online)
-- Identidade LATAMDATA exclusiva, dark mode responsivo para desktop e mobile
-
-## Como rodar o frontend
+Requer Node.js 22 ou superior e Python 3.12. A partir da raiz do repositório:
 
 ```bash
+python -m pip install -r backend/requirements.txt pytest httpx
+python scripts/build_public_snapshot.py
+python -m pytest -q tests
 cd frontend
-npm install
+npm ci
+npm test
+npm run build
 npm run dev
 ```
 
-Acesse http://localhost:5173. No repositório público, a etapa `predev` transforma automaticamente os snapshots CSV já existentes em JSON compatível caso o arquivo de desenvolvimento não esteja presente.
-
-Para produção estática: `npm run build`. Publique a pasta `frontend/dist` no Cloudflare Pages, com raiz de projeto `frontend`, comando `npm run build` e diretório de saída `dist`.
-
-## Como habilitar o backend (jogos)
-
-O backend também funciona de forma independente. Você pode colocá-lo na raiz do repositório Streamlit sem sobrescrever nenhum arquivo existente:
+Frontend: http://localhost:5173. Em outro terminal, na raiz:
 
 ```bash
-pip install -r backend/requirements.txt
 uvicorn backend.main:app --reload --port 8000
 ```
 
-O Vite encaminha `/api` para a porta 8000. A API usa um adaptador próprio para consultar os placares ESPN; os dados dependem da disponibilidade do provedor. Em produção, configure o proxy `/api` para o backend publicado. Sem backend, a seção Partidas explica claramente a indisponibilidade e não inventa resultados.
+O proxy `/api` do Vite funciona no desenvolvimento. Um site estático precisa de
+roteamento próprio para o backend em produção; sem ele, a seção Partidas mostra
+a indisponibilidade. `npm run preview -- --host 127.0.0.1` serve o build local.
 
-## Dados e advertências de publicação
+`npm test` verifica o cálculo e a filtragem do ranking em memória e a renderização
+do perfil no servidor. Esses testes não substituem revisão visual ou interação
+real em desktop/mobile.
 
-`frontend/public/data/serie-a-2026.json` contém uma **cópia de desenvolvimento** dos dados do Brasileirão presentes no arquivo HAR fornecido pelo usuário, identificada com a data 20/10/2026. São 676 atletas únicos (678 registros, 2 duplicados), 20 equipes e um catálogo de 152 métricas. Os registros são uma captura histórica, **não** atualização em tempo real. Os dados não foram gerados artificialmente.
+## Dados e limites
 
-**Antes de publicar o dataset em site aberto:** confirme os direitos de redistribuição/licença da fonte original. Para lançamento comercial, substituir por dados licenciados ou pelos snapshots já disponíveis no GitHub do projeto. A interface e os cálculos desta versão são implementação independente, sem reaproveitamento do HTML/CSS do site analisado.
+`predev`, `pretest` e `prebuild` regeneram o JSON a partir de
+`data/snapshots/bra_a_2026.csv` e `team_bra_a_2026.csv`. Assim, um JSON antigo ou
+importado manualmente de HAR não é reutilizado silenciosamente no build.
+O JSON é ignorado pelo Git.
 
-## Integração segura ao GitHub
+O JSON registra o horário de geração separadamente da data do commit dos CSVs,
+além dos hashes SHA-256 das entradas. Em checkout sem histórico completo ou com
+CSVs alterados, a data da fonte é declarada indisponível. A data do commit não
+comprova o horário de atualização do provedor.
 
-Recomendação: criar branch `feature/react-dashboard`, adicionar `frontend/` e `backend/`, revisar a licença da base fornecida, testar CI e abrir PR. Não substitua `app.py` ou `data/` do Streamlit. Acesse a plataforma anterior enquanto a transição acontece.
+O catálogo público contém 26 definições de métricas, com disponibilidade variável
+por entidade. Os CSVs não fornecem uma classificação verificável nem quantidades
+de partidas e titularidades por atleta; esses campos permanecem indisponíveis.
+Os dados são snapshots, sem garantia de atualização ao vivo.
 
-## Limites desta entrega
+O importador `scripts/import_har.py` continua disponível para capturas autorizadas.
+O arquivo importado deve ficar fora do repositório público e não é usado pelo
+build padrão. A fonte do HAR e seus direitos não foram comprovados nesta revisão.
 
-Não foi possível executar `npm install` neste ambiente (sem acesso externo). A validação da interface é estática, e testes de interação/browser devem ser feitos no primeiro deploy. Não inclui autenticação, banco de dados próprio, atualizações em tempo real ou mapas de finalizações e passes por evento (esses dados não constam na captura do HAR). O endpoint de jogos requer rede e as bibliotecas instaladas.
+## Publicação depende de autorização dos dados
 
-### Execução no Windows
+Estar versionado no GitHub não concede uma licença de redistribuição.
+A revisão em 24/11/2026 encontrou restrições expressas nos termos do
+[FotMob](https://www.fotmob.com/tos.txt) e nos
+[termos Disney/ESPN](https://disneytermsofuse.com/brazilian-portuguese/).
+O [suporte oficial ESPN](https://support.espn.com/hc/en-us/articles/360035445091-Terms-of-Use)
+remete aos termos Disney. Não foi encontrada autorização de uso para este projeto.
 
-Você também pode executar `iniciar-windows.bat` (frontend) e, em outra janela, `iniciar-api-windows.bat` (serviço de partidas). É necessário instalar Node.js e Python.
+Antes de publicar os dados, obtenha autorização escrita/licença adequada ou
+substitua-os por fonte com redistribuição permitida. Um build técnico aprovado
+não resolve essa condição. Não trate os snapshots atuais como base livre.
 
-### Atualizar uma captura autorizada
+Para futura implantação no Cloudflare Pages, o diretório raiz do projeto é
+`frontend`, o comando é `npm run build` e a saída é `dist`. Isso descreve a
+configuração; nenhum deploy foi executado nesta validação.
 
-```bash
-python scripts/import_har.py caminho/captura.har --output frontend/public/data/serie-a-2026.json
-```
+## Estado da revisão
 
-O importador extrai somente as estatísticas do Brasileirão, não copia HTML/CSS/JS ou logotipos de terceiros.
-
-### Implantação no GitHub público
-
-No branch público **não inclua o JSON obtido a partir do HAR** sem autorização/licença para redistribuir a base. O script `scripts/build_public_snapshot.py` gera automaticamente uma versão com as métricas presentes nos CSVs já publicados no projeto. Ela é funcional, porém tem menos indicadores do que o conjunto de 152 métricas da captura (e não inclui uma tabela de classificação verificável); por isso, a UI informa a indisponibilidade da classificação até que uma fonte autorizada seja integrada.
+Consulte [docs/validation/VALIDACAO.md](docs/validation/VALIDACAO.md) para os SHAs
+auditados, os testes, as evidências de CI e os itens realmente pendentes.

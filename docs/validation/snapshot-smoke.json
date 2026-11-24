@@ -1,0 +1,17 @@
+[
+  {
+    "league": "bra_a",
+    "players": 737,
+    "mean_performance": 50.67
+  },
+  {
+    "league": "bra_b",
+    "players": 778,
+    "mean_performance": 49.93
+  },
+  {
+    "league": "arg_a",
+    "players": 1008,
+    "mean_performance": 49.87
+  }
+]

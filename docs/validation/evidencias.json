@@ -1,0 +1,84 @@
+{
+  "observed_at": "2026-11-24",
+  "pr": {
+    "url": "https://github.com/mellinskdata/latamdata/pull/1",
+    "state": "open",
+    "draft": true,
+    "merged": false,
+    "head_sha": "7230441aa0944f9c82bf052791a4cdf31f1bd107",
+    "head": "feature/react-dashboard"
+  },
+  "ci": [
+    {
+      "head_sha": "7230441aa0944f9c82bf052791a4cdf31f1bd107",
+      "created_at": "2026-10-20T22:36:17Z",
+      "conclusion": "success",
+      "url": "https://github.com/mellinskdata/latamdata/actions/runs/39509321246"
+    },
+    {
+      "head_sha": "7230441aa0944f9c82bf052791a4cdf31f1bd107",
+      "created_at": "2026-10-20T22:36:17Z",
+      "conclusion": "success",
+      "url": "https://github.com/mellinskdata/latamdata/actions/runs/39509321253"
+    }
+  ],
+  "recent_commits": [
+    {
+      "sha": "a0f888d28c8d5898ed82ca36bb7407dd03753ed4",
+      "date": "2026-11-23T20:21:21Z",
+      "url": "https://github.com/mellinskdata/latamdata/commit/a0f888d28c8d5898ed82ca36bb7407dd03753ed4",
+      "message": "data: refresh football snapshots"
+    },
+    {
+      "sha": "3fdc3a32fb3365dea156d84607615fed9e7690e6",
+      "date": "2026-11-22T16:26:21Z",
+      "url": "https://github.com/mellinskdata/latamdata/commit/3fdc3a32fb3365dea156d84607615fed9e7690e6",
+      "message": "data: refresh football snapshots"
+    },
+    {
+      "sha": "9e0fca14d8cd47eeb233b2c373d888a2d933fc4f",
+      "date": "2026-11-21T16:14:35Z",
+      "url": "https://github.com/mellinskdata/latamdata/commit/9e0fca14d8cd47eeb233b2c373d888a2d933fc4f",
+      "message": "data: refresh football snapshots"
+    },
+    {
+      "sha": "7efdd56d06856ebfe2513fb89ce2e76fb0493517",
+      "date": "2026-11-20T17:02:37Z",
+      "url": "https://github.com/mellinskdata/latamdata/commit/7efdd56d06856ebfe2513fb89ce2e76fb0493517",
+      "message": "data: refresh football snapshots"
+    }
+  ],
+  "checks": {
+    "baseline_python_passed": 6,
+    "final_python_passed": 31,
+    "final_react_passed": 7,
+    "clean_npm_ci": true,
+    "production_build": true,
+    "stale_json_replaced": true,
+    "browser_visual": false,
+    "cloudflare_deployed": false,
+    "snapshot_analytics_smoke": [
+      {
+        "league": "bra_a",
+        "players": 737,
+        "mean_performance": 50.67
+      },
+      {
+        "league": "bra_b",
+        "players": 778,
+        "mean_performance": 49.93
+      },
+      {
+        "league": "arg_a",
+        "players": 1008,
+        "mean_performance": 49.87
+      }
+    ]
+  },
+  "limits": [
+    "Browser could not access local preview; no visual or touch interaction validation completed.",
+    "Provider data redistribution authorization was not found.",
+    "New local corrections have not run in remote GitHub Actions.",
+    "No external repository writes or deployments performed."
+  ]
+}
