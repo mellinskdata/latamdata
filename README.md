@@ -1,103 +1,77 @@
-# LATAMDATA
+# LATAMDATA v2 — React e API de partidas
 
-Plataforma de football intelligence e scouting quantitativo focada em Brasil e América do Sul.
+Dashboard React/Vite para visão geral, ranking de jogadores e clubes, comparação,
+laboratório de gráficos e perfil estatístico. O serviço FastAPI opcional atende
+as partidas. O aplicativo Streamlit continua em `app.py`.
 
-## Cobertura inicial
+## Executar e verificar localmente
 
-- Brasileirão Série A
-- Brasileirão Série B
-- Liga Profesional Argentina
+Requer Node.js 22 ou superior e Python 3.12. A partir da raiz do repositório:
 
-## Produto
+```bash
+python -m pip install -r backend/requirements.txt pytest httpx
+python scripts/build_public_snapshot.py
+python -m pytest -q tests
+cd frontend
+npm ci
+npm test
+npm run build
+npm run dev
+```
 
-O LATAMDATA combina uma central de jogos com uma camada própria de análise de atletas.
+Frontend: http://localhost:5173. Em outro terminal, na raiz:
 
-### Scout de jogadores
+```bash
+uvicorn backend.main:app --reload --port 8000
+```
 
-- base real de atletas e temporada
-- gols, assistências, xG, xA e xGOT
-- finalizações e finalizações no alvo
-- passe e criação de chances
-- dribles
-- desarmes, interceptações, recuperações, cortes e bloqueios
-- dados de goleiros
-- idade, altura, nacionalidade e valor de mercado quando disponível
-- percentis por posição
-- radar multidimensional
-- relatório estatístico detalhado
-- mapa de finalizações
-- jogadores similares
-- comparação lado a lado
-- exportação CSV
+O proxy `/api` do Vite funciona no desenvolvimento. Um site estático precisa de
+roteamento próprio para o backend em produção; sem ele, a seção Partidas mostra
+a indisponibilidade. `npm run preview -- --host 127.0.0.1` serve o build local.
 
-### Modelos LATAMDATA
+`npm test` verifica o cálculo e a filtragem do ranking em memória e a renderização
+do perfil no servidor. Esses testes não substituem revisão visual ou interação
+real em desktop/mobile.
 
-A plataforma calcula:
+## Dados e limites
 
-- Impact Score
-- Reliability Score
-- Value Score
-- Opportunity Score
-- dimensões de Finalização, Criação, Posse e Defesa
-- arquétipos por função
-- pontos fortes e fracos
-- sinais de gols vs xG e assistências vs xA
+`predev`, `pretest` e `prebuild` regeneram o JSON a partir de
+`data/snapshots/bra_a_2026.csv` e `team_bra_a_2026.csv`. Assim, um JSON antigo ou
+importado manualmente de HAR não é reutilizado silenciosamente no build.
+O JSON é ignorado pelo Git.
 
-Esses índices são modelos próprios e não são notas oficiais das fontes.
+O JSON registra o horário de geração separadamente da data do commit dos CSVs,
+além dos hashes SHA-256 das entradas. Em checkout sem histórico completo ou com
+CSVs alterados, a data da fonte é declarada indisponível. A data do commit não
+comprova o horário de atualização do provedor.
 
-### Times e jogos
+O catálogo público contém 26 definições de métricas, com disponibilidade variável
+por entidade. Os CSVs não fornecem uma classificação verificável nem quantidades
+de partidas e titularidades por atleta; esses campos permanecem indisponíveis.
+Os dados são snapshots, sem garantia de atualização ao vivo.
 
-- pesquisa de clubes
-- calendário e resultados
-- forma recente
-- elenco estatístico
-- central da partida
-- estatísticas
-- escalações
-- eventos
+O importador `scripts/import_har.py` continua disponível para capturas autorizadas.
+O arquivo importado deve ficar fora do repositório público e não é usado pelo
+build padrão. A fonte do HAR e seus direitos não foram comprovados nesta revisão.
 
-## Arquitetura de dados
+## Publicação depende de autorização dos dados
 
-Jogadores e métricas avançadas são obtidos por uma integração web não oficial com FotMob.
+Estar versionado no GitHub não concede uma licença de redistribuição.
+A revisão em 24/11/2026 encontrou restrições expressas nos termos do
+[FotMob](https://www.fotmob.com/tos.txt) e nos
+[termos Disney/ESPN](https://disneytermsofuse.com/brazilian-portuguese/).
+O [suporte oficial ESPN](https://support.espn.com/hc/en-us/articles/360035445091-Terms-of-Use)
+remete aos termos Disney. Não foi encontrada autorização de uso para este projeto.
 
-Jogos e match center usam endpoints JSON públicos utilizados pela ESPN.
+Antes de publicar os dados, obtenha autorização escrita/licença adequada ou
+substitua-os por fonte com redistribuição permitida. Um build técnico aprovado
+não resolve essa condição. Não trate os snapshots atuais como base livre.
 
-O acesso a provedores fica isolado em adaptadores para que a fonte possa ser substituída sem reescrever a camada de análise ou a interface.
+Para futura implantação no Cloudflare Pages, o diretório raiz do projeto é
+`frontend`, o comando é `npm run build` e a saída é `dist`. Isso descreve a
+configuração; nenhum deploy foi executado nesta validação.
 
-O projeto também possui suporte a snapshots de jogadores em data/snapshots. A aplicação tenta a fonte ao vivo e pode cair para o último snapshot real disponível. Um workflow diário prepara a atualização desses snapshots.
+## Estado da revisão
 
-Não existe fallback sintético para jogadores.
-
-## Rodando
-
-    pip install -r requirements.txt
-    streamlit run app.py
-
-## Estrutura
-
-    app.py
-    scout_analytics.py
-    charts.py
-    config.py
-    data/
-      espn_client.py
-      fotmob_provider.py
-      snapshots/
-    ui/
-      common.py
-      match_pages.py
-      scout_pages.py
-    scripts/
-      refresh_snapshots.py
-
-## Próximas evoluções
-
-- força relativa de ligas
-- histórico por temporada
-- shortlists persistentes
-- filtros por função tática
-- perfis de equipe e Tactical Fingerprint
-- relatórios PDF de scouting
-- banco PostgreSQL
-- modelos de valuation e potencial
-- expansão para outras ligas sul-americanas
+Consulte [docs/validation/VALIDACAO.md](docs/validation/VALIDACAO.md) para os SHAs
+auditados, os testes, as evidências de CI e os itens realmente pendentes.

@@ -1,0 +1,40 @@
+{
+  "checked_at": "2026-11-24T18:43:58.596705+00:00",
+  "endpoint": "https://site.api.espn.com/apis/site/v2/sports/soccer/bra.1/scoreboard",
+  "params": {
+    "dates": "2026",
+    "limit": 500
+  },
+  "success": true,
+  "events": 383,
+  "unique_ids": 383,
+  "completed": 359,
+  "statuses": {
+    "Full Time": 359,
+    "Postponed": 3,
+    "Scheduled": 21
+  },
+  "teams": 20,
+  "distinct_home_away_pairs": 380,
+  "repeated_pair_statuses": [
+    [
+      "Postponed",
+      "Full Time"
+    ],
+    [
+      "Postponed",
+      "Full Time"
+    ],
+    [
+      "Postponed",
+      "Full Time"
+    ]
+  ],
+  "dates": [
+    "2026-01-28T22:00Z",
+    "2026-12-03T00:30Z"
+  ],
+  "cache_reused": true,
+  "seconds": 10.79,
+  "limitation": "Point-in-time source response; no SLA, completeness or redistribution license established."
+}
